@@ -1,4 +1,4 @@
-# Near Live Global Server Load-Balancing, Failover and Geo-Targetting using only DNS
+# Near Live Global Server Load-Balancing, Failover and Geo-Targeting using only DNS
 
 
 ## Introduction
@@ -9,9 +9,9 @@ This usually takes the form of the client experiencing a timeout, or other kind 
 
 This has obvious flaws, which is probably the reason it is rarely used, especially for interactive clients used directly by end users, e.g browsers. Although it can still be useful for scenarios like email delivery, where delays in the order of a few seconds to a minute are less consequential. 
 
-Instead people tend to rely on specific software and / or services to provide fail-over, load-balancing and geo-targetting functionality.
+Instead people tend to rely on specific software and / or services to provide fail-over, load-balancing and geo-targeting functionality.
 
-However, there is a way in which you can have fail-over, load-balancing and geo-targetting using only DNS. This has the huge advantages of not introducing more points of failure, as little to no additional cost, uses off-the-shelf software and mostly uses the systems & services you were going to run anyway (mostly!).
+However, there is a way in which you can have fail-over, load-balancing and geo-targeting using only DNS. This has the huge advantages of not introducing more points of failure, as little to no additional cost, uses off-the-shelf software and mostly uses the systems & services you were going to run anyway (mostly!).
 
 ## The Proposal
 
@@ -24,7 +24,7 @@ When resolving a domain name, having received a delegation to a sub-domain's nam
 
 ### What changes
 
-We can use this functionality to create a configuration that provides fail-over, load-balancing and geo-targetting using only DNS. We do this by installing off-the-shelf DNS software on each server that hosts a service and, in the parent zone file, changing the label for that service from a host name (a label that only has `A` or `AAAA` records) to a delegated subdomain (a label that only has `NS`/`DS` records), here referred to as a “service subdomain”.
+We can use this functionality to create a configuration that provides fail-over, load-balancing and geo-targeting using only DNS. We do this by installing off-the-shelf DNS software on each server that hosts a service and, in the parent zone file, changing the label for that service from a host name (a label that only has `A` or `AAAA` records) to a delegated subdomain (a label that only has `NS`/`DS` records), here referred to as a “service subdomain”.
 
 Then each host becomes directly responsible for resolving the host name of the service and will only resolve the service name to its own IP Address. The ability and speed with which the host provides that DNS resolution will directly determine the amount of traffic (if any) that host receives for that service, as each IP Address will only point to the host that gave it out.
 
