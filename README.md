@@ -1,30 +1,30 @@
-# Near Live Global Server Load-Balancing, Failover, Geo-Targeting and D/DoS Protection using only existing simple DNS features
+# Global Server Load-Balancing, Failover, Geo-Targeting and D/DoS Protection using only existing simple DNS features
 
 ## Disclaimer
-1. This document represent my views and does not reflect on my employer in any way whatsoever.
+1. This document represents my views and does not reflect on my employer in any way whatsoever.
 2. This technique was not invented by me, but I have been unable to find the original inventor. This technique is rarely discussed, hence this document.
 3. I have really bad dyslexia, so there will be spelling errors & typos. It does not effect my ability to conceptualise complex systems. In fact there is evidence the opposite is true.
 
 ## Preamble
 There is an underlying assumption that you are providing a client facing service, from a DNS host name, using one or more POPs or vPOPs, optionally at geographically or globally dispersed locations.
 
-If you are reading this document, it will be because you are interested in providing Load-Balancing, Failover, Geo-Targeting and D/DoS Protection across those servers.
+If you are reading this document, it will be because you are interested in providing Load-Balancing, Failover, Geo-Targeting and D/DoS Protection across those POPs.
 
-I will talk about the service answering client requests, but the technique is reasonably independent of the exact nature of the service. One requirement it does have, however, is that clients
-reasonably frequently resolve the host name of the service, making it reasonably ideal for an HTTP/HTTPS service, e.g. a rest/api, but possible less ideal for services that use long held connected sessions.
+I will talk about the service answering client requests, but the technique is reasonably independent of the exact nature of the service. However, it does work better
+with a series of short client connections, each preceeded with a host name resolution, making it reasonably ideal for an HTTP/HTTPS service, e.g. a rest/api, but possible less ideal for services that use long held connected sessions.
 
-That said, the issue of providing these features on a service that uses long held connected sessions is reasonably generic.
+That said, the problems of providing these features on a service that uses long held connected sessions is reasonably generic.
 
 ## Definitions
 
 | Term | Meaning |
 |------|---------|
-| POP | Point-of-presence - instances you have of servers providing the service |
+| POP | Point-of-presence - instances where you have servers providing the service, e.g. a data centre with a rack of servers or cloud services provisioned in a specific data centre. |
 | vPOP | Locations where you have equipment that connects clients to the service, but doesn't provide the service directly. |
-| Failover | The ability to continue the operation of the service when one or more POPs fail, either fully or partially |
-| Load balancing | The ability to spread client requests across the POPs providing the service. |
-| Geo-Targeting | The ability to send client requests to the POP that is network-closest to the client. |
-| D/DoS Protection | The ability of the service to continue normal operation of a significant proportion of clients despite being subjected to a D/DoS Attack |
+| Failover | The ability to continue the operation of the service when one or more POPs fail, either fully, partially or intermittently |
+| Load balancing | The ability to spread client requests across the POPs providing the service, ideally where the service operator has some control over how the load is spread. |
+| Geo-Targeting | The ability to make client requests go to the POP that is network-closest to the client, i.e. the location with the lowest latency between the client and the service. |
+| D/DoS Protection | The ability of the service to continue normal operation for a significant proportion of clients, preferably all, despite being subjected to a D/DoS Attack |
 
 For the purposes of this document, the term `POP` will include `vPOPs` unless explicitly stated. A vPOP might be something like a router/firewall/VPN, installed at a remote location, that connects to a central service hub over a private circuit of some sort.
 This allows the service provider to scrub traffic locally at the vPOP while installing minimal hardware at the remote location.
@@ -41,6 +41,7 @@ This has obvious flaws, which is probably the reason it is rarely used, especial
 Instead people tend to rely on specific software and / or services to provide fail-over, load-balancing and geo-targeting functionality.
 
 However, there is a way in which you can have fail-over, load-balancing and geo-targeting using only DNS. This has the huge advantages of not introducing more points of failure, as little to no additional cost, uses off-the-shelf software and mostly uses the systems & services you were going to run anyway (mostly!).
+
 
 ## The Proposal
 
@@ -75,6 +76,44 @@ With special integration between the DNS server and the application running on t
 
 This would allow very loaded servers to shed load to other servers. Obviously, this assumes spare capacity somewhere in the system, but if the system lacks enough capacity there's nothing DNS can do to solve that. Although slowing the rate of DNS responses, to reduce load, may result in a better outcome for the host than taking excess client traffic and crashing the server!
 
+
+
+## How this Provides Load Balancing
+
+The number of client requests a POP receives will be directly proportional to the number of DNS requests it answers. This means the service operator has extremely fine control over the number of requests that goes to each POP.
+
+Using something as simple as a single line firewall rule the service operator can throttle the number of DNS queries the service sees & answers, so controlling the amount of load that POP gets, with any 
+exceeds load shed to other POPs.
+
+## How this Provides Failover
+
+A POP, where the server or connectivity is down, will stop answering DNS queries, so will stop receiving client requests within the timeout set by the service operator (see the example below).
+
+Where the failure is intermittent, e.g. the connectivity has become intermittent or lossy, the number of client requests received will be reduced in the ratio of the number of DNS requests that
+do not get answered, with clients being sent to the next nearest POP instead.
+
+## How this Provides Geo-Targetting
+
+When the client's DNS resolver resolves the host name of the service, it will accept the answer from the POP that gets its answer back to the resolver first. This will be the network-nearest POP
+and will answer with the IP Address of that POP, thus sending the clients of that resolver to the network-nearest POP.
+
+From then onwards the resolver will prefer to use this POP for resolving the host name of the service as it is the fastest to respond. But if the nearest POP starts to fail to respond, the resolver will mark it as down and use the next nearest.
+
+Resolvers will also periodically check the response time of all POP to ensure it is still using the fastest.
+
+## How this Provides D/DoS Protection
+
+When an attacker targets the service, if they start by resolving the service then launching an attack against the IP Address they have received, they will only be attacking one of many POPs.
+
+While the POP is being attacked, it will be difficult for that POP to get DNS responses back to the client's resolvers, so the clients resolvers will get responses from other POPs first and send the client to the other POPs, that are clear of attack.
+
+Therefore, in this scenario, one POP gets attacked and all client get sent to the POPs that are free from attack.
+
+If the attacker re-resolves the host name periodically, then they will simply end up switching their attack from one POP to another, and the service will react by switching the clients to the POPs that are not getting attacked.
+
+If the attacker tries to attack all POPs by continuously re-resolving the service host name, this will be relatively easy to detect & mitigate against, e.g. give the attacker a localhost IP Address as the answer.
+
+To attack all POPs without being prevented, the attacker would have to pre-resolve the service hostname from multiple location around the internet, make a list of all the IP Addresses returned and attack all of them simultaneously. While this is possible, it would represent a much more sophisticated style of attack than commonly seen.
 
 
 ## An Example Configuration - The Old Way
@@ -147,7 +186,7 @@ The best options are probably
 
 ## It Could be so Much Easier
 
-One way to make this whole process much easier would be to have the very basic DNS server functionality required built into the software that is providing the client service.
+One way to make this technique much easier to set up and run would be to have the very basic DNS server functionality necessary built into the software that is providing the client service.
 
 The amount of DNS work it needs to do is extremely minimal, so adding a module to an existing application, like `nginx`, should be a relatively straight forward task.
 
@@ -155,7 +194,12 @@ This would obviate the need for adding DNS software to the hosts and should make
 
 This would have zero effect on any of the existing functionality of the software, but mean all the user needs to do is make the appropriate changes to the parent zone.
 
-Although support for modern DNS functionality like EDNS0 and DNS Cookies would be “nice to have” it should not be necessary.
+Although support for modern DNS functionality like `EDNS0` and DNS Cookies would be “nice to have” it should not be necessary.
 
 If the `nginx` server was hosted on a cloud service like AWS, it may be necessary for the module to also support RFC2136 Dynamic DNS Updates to change the IP Address given out, as cloud services often work on dynamically allocated IPs.
+
+
+## This Technique vs Anycast
+
+`coming soon`
 
