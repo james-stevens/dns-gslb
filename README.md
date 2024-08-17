@@ -5,6 +5,31 @@
 2. This technique was not invented by me, but I have been unable to find the original inventor. This technique is rarely discussed, hence this document.
 3. I have really bad dyslexia, so there will be spelling errors & typos. It does not effect my ability to conceptualise complex systems. In fact there is evidence the opposite is true.
 
+## Preamble
+There is an underlying assumption that you are providing a client facing service, from a DNS host name, using one or more POPs or vPOPs, optionally at geographically or globally dispersed locations.
+
+If you are reading this document, it will be because you are interested in providing Load-Balancing, Failover, Geo-Targeting and D/DoS Protection across those servers.
+
+I will talk about the service answering client requests, but the technique is reasonably independent of the exact nature of the service. One requirement it does have, however, is that clients
+reasonably frequently resolve the host name of the service, making it reasonably ideal for an HTTP/HTTPS service, e.g. a rest/api, but possible less ideal for services that use long held connected sessions.
+
+That said, the issue of providing these features on a service that uses long held connected sessions is reasonably generic.
+
+## Definitions
+
+| Term | Meaning |
+|------|---------|
+| POP | Point-of-presence - instances you have of servers providing the service |
+| vPOP | Locations where you have equipment that connects clients to the service, but doesn't provide the service directly. |
+| Failover | The ability to continue the operation of the service when one or more POPs fail, either fully or partially |
+| Load balancing | The ability to spread client requests across the POPs providing the service. |
+| Geo-Targeting | The ability to send client requests to the POP that is network-closest to the client. |
+| D/DoS Protection | The ability of the service to continue normal operation of a significant proportion of clients despite being subjected to a D/DoS Attack |
+
+For the purposes of this document, the term `POP` will include `vPOPs` unless explicitly stated. A vPOP might be something like a router/firewall/VPN, installed at a remote location, that connects to a central service hub over a private circuit of some sort.
+This allows the service provider to scrub traffic locally at the vPOP while installing minimal hardware at the remote location.
+
+
 ## Introduction
 
 The technique, for doing failover in DNS, known to many people is simply to allocate multiple IP Addresses (v4 and/or v6) to the same host name and rely on the client to perform failover operations.
