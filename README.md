@@ -1,4 +1,4 @@
-# Near Live Global Server Load-Balancing, Failover, Geo-Targeting and D/DoS Protection using only existing DNS
+# Near Live Global Server Load-Balancing, Failover, Geo-Targeting and D/DoS Protection using only existing simple DNS features
 
 ## Disclaimer
 1. This document represent my views and does not reflect on my employer in any way whatsoever.
