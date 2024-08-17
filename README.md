@@ -1,5 +1,9 @@
 # Near Live Global Server Load-Balancing, Failover, Geo-Targeting and D/DoS Protection using only existing DNS
 
+## Disclaimer
+1. This document represent my views and does not reflect on my employer in any way whatsoever.
+2. This technique was not invented by me, but I have been unable to find the original inventor. This technique is rarely discussed, hence this document.
+3. I have really bad dyslexia, so there will be spelling errors & typos. It does not effect my ability to conceptualise complex systems. In fact there is evidence the opposite is true.
 
 ## Introduction
 
