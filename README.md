@@ -13,9 +13,9 @@ There is an underlying assumption that you are providing a client facing service
 If you are reading this document, it will be because you are interested in providing Load-Balancing, Failover, Geo-Targeting and D/DoS Protection across those POPs.
 
 I will talk about the service answering client requests, but DNS/GSLB is reasonably independent of the exact nature of the service. However, it does work better
-with a series of short client connections, each preceeded with a host name resolution, making it reasonably ideal for an HTTP/HTTPS service, e.g. a rest/api, but possible less ideal for services that use long held connected sessions.
+with a series of short client connections, each preceeded with a host name resolution, making it reasonably ideal for an HTTP/HTTPS service, e.g. a rest/api, but possibly less ideal for services that use long held connected sessions.
 
-That said, the problems of providing these features on a service that uses long held connected sessions is reasonably generic.
+That said, the problem of providing these features on a service that uses long held connected sessions is reasonably generic.
 
 ## Definitions
 
