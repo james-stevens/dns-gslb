@@ -1,8 +1,10 @@
 # Global Server Load-Balancing, Failover, Geo-Targeting and D/DoS Protection using only existing simple DNS features
 
+In this document, this technique will be referred to as DNS/GSLB.
+
 ## Disclaimer
 1. This document represents my views and does not reflect on my employer in any way whatsoever.
-2. This technique was not invented by me, but I have been unable to find the original inventor. This technique is rarely discussed, hence this document.
+2. DNS/GSLB was not invented by me, but I have been unable to find the original inventor. DNS/GSLB is rarely discussed, hence this document. I have known about and used DNS/GSLB for some 20 years.
 3. I have really bad dyslexia, so there will be spelling errors & typos. It does not effect my ability to conceptualise complex systems. In fact there is evidence the opposite is true.
 
 ## Preamble
@@ -10,7 +12,7 @@ There is an underlying assumption that you are providing a client facing service
 
 If you are reading this document, it will be because you are interested in providing Load-Balancing, Failover, Geo-Targeting and D/DoS Protection across those POPs.
 
-I will talk about the service answering client requests, but the technique is reasonably independent of the exact nature of the service. However, it does work better
+I will talk about the service answering client requests, but DNS/GSLB is reasonably independent of the exact nature of the service. However, it does work better
 with a series of short client connections, each preceeded with a host name resolution, making it reasonably ideal for an HTTP/HTTPS service, e.g. a rest/api, but possible less ideal for services that use long held connected sessions.
 
 That said, the problems of providing these features on a service that uses long held connected sessions is reasonably generic.
@@ -32,7 +34,7 @@ This allows the service provider to scrub traffic locally at the vPOP while inst
 
 ## Introduction
 
-The technique, for doing failover in DNS, known to many people is simply to allocate multiple IP Addresses (v4 and/or v6) to the same host name and rely on the client to perform failover operations.
+A technique, for doing failover in DNS, known to many people is simply to allocate multiple IP Addresses (v4 and/or v6) to the same host name and rely on the client to perform failover operations.
 
 This usually takes the form of the client experiencing a timeout, or other kind of connection failure, then either trying other IP Addresses it was given, or re-resolving the client asking its resolver for the IP Address again and relying on the resolver to give the client a different answer.
 
@@ -126,7 +128,7 @@ For the site `www.exmaple.com` hosted on three servers on the IP Addresses `172.
     www IN A 172.17.0.1
     www IN A 172.18.0.1
 
-Although this example uses private (RFC1918) IP Addresses the technique in this document works equally well in public and private networks.
+Although this example uses private (RFC1918) IP Addresses DNS/GSLB works equally well in public and private networks.
 
 
 ## An Example Configuration - The New Way
@@ -158,7 +160,7 @@ The same additional software and configuration will also be applied to hosts 17 
 
 It is important that each of the hosts lists all the other hosts in the NS records (in the service subdomain) as these are the authoritative records, so will be preferred over the NS records from the parent zone, which have the status of GLUE records.
 
-Although, in our example, each host only serves out a single IPv4 Address, they could serve out any number of IP Addresses (v4 and / or v6). The important thing about this technique is that the address(es) point to the host that is giving them out.
+Although, in our example, each host only serves out a single IPv4 Address, they could serve out any number of IP Addresses (v4 and / or v6). The important thing about DNS/GSLB is that the address(es) point to the host that is giving them out.
 
 The TTL on the IP Address record(s) will determine how long it will take for users to failover to a different host, when the host they had been talking to dies.
 
@@ -174,9 +176,9 @@ When the DNS service on a host comes back up, it should start receiving traffic 
 3. If you are using a firewall in front of (and/or on) the service hosts, you will need to open access to port 53 for TCP & UDP to allow DNS to work. If you are using connection tracking you may need to extend the number of slots & tune the timeout for UDP as DNS can use a lot of lot fast. A UDP conntrack timeout of 12 seconds is common for DNS.
 
 
-## DNSSEC and this Technique
+## DNSSEC and DNS/GSLB
 
-Setting up this technique for DNSSEC is definitely more complex than for a traditional centrally controlled zone file.
+Setting up DNS/GSLB for DNSSEC is definitely more complex than for a traditional centrally controlled zone file.
 
 The best options are probably
 1. Sign the service subdomain multiple times, once with each IP Address of each host, then distribute the pre-signed zone files to the hosts. This way the DS record is the same for all three hosts.
@@ -184,9 +186,16 @@ The best options are probably
 3. Don't DNSSEC sign the service subdomain!
 
 
+## Does it Really Work?
+
+I have know about and used DNS/GSLB for some 20 years. I have never had any issues with it. For 10 years I was responsible for all the servers and services at the dot-IO Domain Registry where I used DNS/GSLB.
+
+We had two POPs in London & a vPOP in  Ashburn. DNS/GSLB was used, for all its benefits, to distribute load over these locations.
+
+
 ## It Could be so Much Easier
 
-One way to make this technique much easier to set up and run would be to have the very basic DNS server functionality necessary built into the software that is providing the client service.
+One way to make DNS/GSLB much easier to set up and run would be to have the very basic DNS server functionality necessary built into the software that is providing the client service.
 
 The amount of DNS work it needs to do is extremely minimal, so adding a module to an existing application, like `nginx`, should be a relatively straight forward task.
 
@@ -199,7 +208,40 @@ Although support for modern DNS functionality like `EDNS0` and DNS Cookies would
 If the `nginx` server was hosted on a cloud service like AWS, it may be necessary for the module to also support RFC2136 Dynamic DNS Updates to change the IP Address given out, as cloud services often work on dynamically allocated IPs.
 
 
-## This Technique vs Anycast
+## DNS/GSLB vs Anycast
 
-`coming soon`
+DNS/GSLB has some obvious similarities with Anycast. So it would be amiss to not discuss the relative pros and cons of each.
+
+Each technique uses a separate signalling protocol to flag to clients whether a particular POP is available for service or not, drawing request traffic to that POP, or not. Anycast uses BGP, DNS/GSLB uses DNS.
+
+### Some Notable Features of Anycast
+
+1. Anycast will pick the “cheapest” route. This may be the same as the route with the lowest latency (aka “network nearest”), but often is not. Where as DNS/GSLB will always pick the usable POP with the lowest latency.
+
+    Typically Anycast will route based on the lowest number of hops, so is highly dependant on peering agreements. Differential financial cost may be involved between peers, influencing routing decisions. Carriers will often count their entire internal network as zero hops. All these factors can mean the “cheapest” route is not to the lowest latency POP.
+
+2. Although, to the service provider, the service appears to be serviced by a number of POPs, to the client there is only ever one single POP – the one they are being routed to. To the client, all the other POPs do not exist and are inaccessible, until the BGP is withdrawn from their “cheapest”.
+
+    Therefore, when using anycast, care must be taken to ensure the BGP route is withdrawn when the service ceases to be viable at any one POP.
+
+### Comparing Anycast with DNS/GSLB
+
+| Feature | DNS/GSLB | Anycast
+|-----------|---------------|-----------
+| Load-balancing | Can be fine tuned to the operator's exact specification | Anycast will spread the load over the POPs, but the operator has little control over how this happens |
+| Failover | Generally this is automatic | The operator is responsible for ensuring this happens, which can be done with an automation |
+| Geo-targeting | Clients are always directed to the usable site with the lowest latency | Yes, but some what haphazard and unpredictable, see above
+| Anti D/DoS | Mostly the same | Mostly the same |
+
+With Anti D/DoS the functionality is quite similar, in that attack traffic will probably either be all drawn to one site, or evenly spread across all sites – depending on the exact attack profile.
+
+However, if a single POP gets attacked, with anycast legitimate clients will inevitably suffer, as they can only ever see their “cheapest” POP, but DNS/GSLB clients will probably be automatically sent to the next-nearest site. With Anycast, if the BGP is taken down, to move the clients to the next-nearest POP, the attack traffic will move with them, where as (with DNS/GSLB) separating attack traffic and legitimate clients is possible.
+
+### Pros & Cons
+
+Anycast is well understood, widely used and widely recognised. Staff with skills in DNS/GSLB are therefore generally available. DNS/GSLB is not widely used, so few people will recognise it when they see it and people with detailed DNS technical skills are becoming increasingly hard to find.
+
+Anycast hosting will require a specialist hosting provider who can support BGP. This is becoming easier to find, but there will always be relatively limited choice and a higher cost. DNS/GSLB only requires standard DNS, so should work with almost any hosting provider.
+
+Under some conditions, anycast can end up seeing two routes as equal cost and so send packets equally to both POPs. This is rare, but it can happen. When this happens it breaks TCP. This will never happen with DNS/GSLB as the client gets “locked in” to one POP for the period of the TTL.
 
