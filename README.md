@@ -5,7 +5,7 @@ In this document, this technique will be referred to as DNS/GSLB.
 ## Disclaimer
 1. This document represents my views and does not reflect on my employer in any way whatsoever.
 2. DNS/GSLB was not invented by me, but I have been unable to find the original inventor. DNS/GSLB is rarely discussed, hence this document. I have known about and used DNS/GSLB for some 20 years.
-3. I have really bad dyslexia, so there will be spelling errors & typos. It does not effect my ability to conceptualise complex systems. In fact there is evidence the opposite is true.
+3. I have really bad dyslexia, so there will be spelling errors & typos. It does not effect my ability to conceptualise complex systems. In fact there is evidence the [opposite is true](https://inthemindseyedyslexicrenaissance.blogspot.com/).
 
 ## Preamble
 There is an underlying assumption that you are providing a client facing service, from a DNS host name, using one or more POPs or vPOPs, optionally at geographically or globally dispersed locations.
