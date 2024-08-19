@@ -42,7 +42,9 @@ This has obvious flaws, which is probably the reason it is rarely used, especial
 
 Instead people tend to rely on specific software and / or services to provide fail-over, load-balancing and geo-targeting functionality.
 
-However, there is a way in which you can have fail-over, load-balancing and geo-targeting using only DNS. This has the huge advantages of not introducing more points of failure, as little to no additional cost, uses off-the-shelf software and mostly uses the systems & services you were going to run anyway (mostly!).
+However, there is a way in which you can have fail-over, load-balancing, geo-targeting and D/DoS protection using only DNS. This has the huge advantages of not introducing more points of failure, has little to no additional cost, uses off-the-shelf software and mostly uses the systems & services you were going to run anyway (mostly!).
+
+This is because resolving DNS names already has these features built in, so we can use a specific DNS configuration to add these features to any service.
 
 
 ## The Proposal
